@@ -174,6 +174,8 @@ export class AppointmentsService {
       data: { appointmentId: appointment.id },
     });
 
+    void this.notifyN8n(appointment, 'APPROVED');
+
     return this.mapAppointment(appointment);
   }
 
@@ -260,6 +262,8 @@ export class AppointmentsService {
       data: { appointmentId: appointment.id },
     });
 
+    void this.notifyN8n(appointment, 'REJECTED');
+
     return this.mapAppointment(appointment);
   }
 
@@ -280,6 +284,24 @@ export class AppointmentsService {
       include: this.includePeople(),
     });
 
+    const dateStr = new Date(appointment.scheduledAt).toLocaleDateString(
+      'es-ES',
+      {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      },
+    );
+
+    void this.notificationsService.createAndPush({
+      tenantId: currentUser.tenantId,
+      patientId: appointment.patientId,
+      type: NotificationType.CITA_COMPLETADA,
+      title: 'Cita completada',
+      body: `Tu cita del ${dateStr} fue registrada como completada. ¡Gracias por asistir!`,
+      data: { appointmentId: appointment.id },
+    });
+
     return this.mapAppointment(appointment);
   }
 
@@ -293,6 +315,24 @@ export class AppointmentsService {
         deletedAt: null,
       },
       include: this.includePeople(),
+    });
+
+    const dateStr = new Date(appointment.scheduledAt).toLocaleDateString(
+      'es-ES',
+      {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      },
+    );
+
+    void this.notificationsService.createAndPush({
+      tenantId: currentUser.tenantId,
+      patientId: appointment.patientId,
+      type: NotificationType.CITA_NO_ASISTIO,
+      title: 'No asististe a tu cita',
+      body: `Registramos que no asististe a tu cita del ${dateStr}. Reprograma cuando puedas para retomar tu seguimiento.`,
+      data: { appointmentId: appointment.id },
     });
 
     return this.mapAppointment(appointment);
@@ -484,5 +524,26 @@ export class AppointmentsService {
       patientFullName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
       nutritionistFullName: `${appointment.nutritionist.firstName} ${appointment.nutritionist.lastName}`,
     };
+  }
+
+  private async notifyN8n(appointment: AppointmentWithPeople, action: 'APPROVED' | 'REJECTED') {
+    const webhookUrl = process.env.N8N_WEBHOOK_URL;
+    if (!webhookUrl) return;
+
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          appointmentId: appointment.id,
+          patientPhone: appointment.patient?.phone,
+          patientName: appointment.patient?.firstName,
+          scheduledAt: appointment.scheduledAt,
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to notify n8n webhook:', e);
+    }
   }
 }
