@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -12,7 +13,8 @@ import {
   Prisma,
   UserStatus,
 } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AppointmentFilterInput } from './dto/appointment-filter.input';
 import { CancelAppointmentInput } from './dto/cancel-appointment.input';
@@ -36,7 +38,7 @@ type AppointmentWithPeople = Prisma.AppointmentGetPayload<{
 @Injectable()
 export class AppointmentsService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
     private readonly notificationsService: NotificationsService,
   ) {}
 

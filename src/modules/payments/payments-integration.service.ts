@@ -1,12 +1,14 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuditService } from '../audit/audit.service';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { CreateInitialCheckoutSessionInput } from './dto/create-initial-checkout-session.input';
@@ -110,7 +112,7 @@ export class PaymentsIntegrationService {
   constructor(
     private readonly configService: ConfigService,
     private readonly auditService: AuditService,
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
   ) {}
 
   async findPlans(currentUser: AuthenticatedUser) {

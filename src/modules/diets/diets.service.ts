@@ -1,4 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuthenticatedUser } from '../auth/auth.types';
 import {
   DietPlanStatus,
@@ -6,7 +13,6 @@ import {
   Prisma,
   UserStatus,
 } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateDietPlanInput } from './dto/create-diet-plan.input';
 import { DietFilterInput } from './dto/diet-filter.input';
@@ -14,7 +20,6 @@ import { DietPlanDayInput } from './dto/diet-structure.input';
 import { DuplicateDietPlanDayInput } from './dto/duplicate-diet-plan-day.input';
 import { UpdateDietPlanStructureInput } from './dto/update-diet-plan-structure.input';
 import { UpdateDietPlanInput } from './dto/update-diet-plan.input';
-import { mapDietPlanToPdfPayload } from './diet-pdf.mapper';
 
 type DietPlanWithStructure = Prisma.DietPlanGetPayload<{
   include: {
@@ -35,7 +40,7 @@ type DietPlanWithStructure = Prisma.DietPlanGetPayload<{
 @Injectable()
 export class DietsService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -288,36 +293,6 @@ export class DietsService {
     });
 
     return this.findById(currentUser, input.dietPlanId);
-  }
-
-  async generatePdf(currentUser: AuthenticatedUser, id: string) {
-    const diet = await this.findRecordById(currentUser, id);
-    const mappedDiet = this.mapDiet(diet);
-    const payload = mapDietPlanToPdfPayload(mappedDiet);
-
-    const baseUrl = process.env.DOCUMENTAL_SERVICE_URL?.replace(/\/$/, '') || 'http://localhost:8082/api/v1';
-    const url = `${baseUrl}/documents/pdf/diet`;
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-    } catch (fetchError) {
-      console.error('[DietsService] Error de conexión al microservicio documental:', fetchError);
-      throw new Error(`No se pudo conectar al servicio documental: ${fetchError}`);
-    }
-
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => 'Sin cuerpo');
-      console.error(`[DietsService] Microservicio documental respondió ${response.status}: ${errorBody}`);
-      throw new Error(`Error generando PDF en el microservicio: ${response.status} - ${errorBody}`);
-    }
-
-    const data = await response.json();
-    return data.url;
   }
 
   private buildWhere(

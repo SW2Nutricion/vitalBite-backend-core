@@ -18,7 +18,12 @@ API central del sistema VitalBite para nutricionistas (SaaS multi-tenant).
 | `body-measurements` | Medidas corporales |
 | `diets` | Consumo diario y dietas personalizadas |
 | `body-composition` | Monitoreo de composición corporal |
-| `reports` | Generación y entrega de PDFs |
+| `reports` | Reportes propios del dominio |
+
+La generación de PDFs, la orquestación de IA y el acceso al microservicio de
+pagos no pertenecen a este servicio. El único punto de entrada para esas
+integraciones es `vitalBite-api-gateway`, que consulta el Core cuando necesita
+datos del dominio y reenvía la solicitud al microservicio correspondiente.
 
 ## Requisitos
 
@@ -76,3 +81,6 @@ Usuario demo plan individual:
 ## Documentación
 
 Ver carpeta `docs/` para requerimientos y arquitectura del proyecto.
+
+La guía de capas y el plan de migración incremental están en
+[`docs/NestJs/00-arquitectura/arquitectura-limpia.md`](docs/NestJs/00-arquitectura/arquitectura-limpia.md).

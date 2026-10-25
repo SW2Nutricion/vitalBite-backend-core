@@ -1,14 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { Prisma } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
 import { BodyMeasurementFilterInput } from './dto/body-measurement-filter.input';
 import { CreateBodyMeasurementInput } from './dto/create-body-measurement.input';
 import { UpdateBodyMeasurementInput } from './dto/update-body-measurement.input';
 
 @Injectable()
 export class BodyMeasurementsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
+  ) {}
 
   async findByPatient(
     currentUser: AuthenticatedUser,

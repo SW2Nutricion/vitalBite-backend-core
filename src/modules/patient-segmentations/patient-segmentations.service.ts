@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { PatientSegmentationModel } from './models/patient-segmentation.model';
 
@@ -30,7 +31,7 @@ export class PatientSegmentationsService {
   private readonly logger = new Logger(PatientSegmentationsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
     private readonly configService: ConfigService,
   ) {}
 
