@@ -4,53 +4,56 @@ import { DietPlanDayModel } from './models/diet-plan-day.model';
 import { DietPlanModel } from './models/diet-plan.model';
 
 export interface DietPdfPayload {
-  id: string;
-  tenantId: string;
-  patientId: string;
-  nutritionistId: string;
-  name: string;
-  objective: string;
-  phase: string | null;
-  approach: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  status: string;
-  mealsPerDay: number;
-  mainRestriction: string | null;
-  notes: string | null;
-  estimatedCalories: number;
-  adherencePercent: number | null;
-  patientFullName: string;
-  nutritionistFullName: string;
-  days: DietPdfDay[];
+  requestId: string | null;
+  generatedAt: string;
+  output: {
+    fileName: string;
+    delivery: string;
+    locale: string;
+    timezone: string;
+    showGenerationDate: boolean;
+    showProfessionalSignature: boolean;
+    footerText: string | null;
+  };
+  patient: {
+    id: string;
+    fullName: string;
+  };
+  dietPlan: {
+    id: string;
+    name: string;
+    objective: string;
+    phase: string | null;
+    dailyCaloriesTarget: number;
+  };
+  week: {
+    startDate: string | null;
+    endDate: string | null;
+    days: DietPdfDay[];
+  };
+  summary: {
+    weeklyTargetCalories: number;
+    weeklyConsumedCalories: number;
+  };
 }
 
 export interface DietPdfDay {
   id: string;
-  dietPlanId: string;
   dayLabel: string;
   dayOrder: number;
+  targetCalories: number;
+  consumedCalories: number;
   meals: DietPdfMeal[];
 }
 
 export interface DietPdfMeal {
   id: string;
-  dietPlanDayId: string;
   name: string;
   mealOrder: number;
+  time: string | null;
   targetCalories: number;
-  notes: string | null;
-  items: DietPdfMealItem[];
-}
-
-export interface DietPdfMealItem {
-  id: string;
-  dietMealId: string;
-  name: string;
-  portion: string | null;
-  calories: number;
-  itemOrder: number;
-  notes: string | null;
+  consumedCalories: number;
+  text: string;
 }
 
 export interface MapDietPlanToPdfPayloadOptions {
@@ -72,27 +75,47 @@ export function mapDietPlanToPdfPayload(
   const weekDays = [...(dietPlan.days ?? [])]
     .sort((current, next) => current.dayOrder - next.dayOrder)
     .map((day) => mapDay(day));
+  const weeklyTargetCalories = sumBy(
+    weekDays,
+    (day) => day.targetCalories,
+  );
+  const weeklyConsumedCalories = sumBy(
+    weekDays,
+    (day) => day.consumedCalories,
+  );
 
   return {
-    id: dietPlan.id,
-    tenantId: dietPlan.tenantId,
-    patientId: dietPlan.patientId,
-    nutritionistId: dietPlan.nutritionistId,
-    name: dietPlan.name,
-    objective: dietPlan.objective,
-    phase: dietPlan.phase ?? null,
-    approach: dietPlan.approach ?? null,
-    startDate: toIsoDate(dietPlan.startDate),
-    endDate: toIsoDate(dietPlan.endDate),
-    status: dietPlan.status,
-    mealsPerDay: numberOrZero(dietPlan.mealsPerDay),
-    mainRestriction: dietPlan.mainRestriction ?? null,
-    notes: dietPlan.notes ?? null,
-    estimatedCalories: numberOrZero(dietPlan.estimatedCalories),
-    adherencePercent: dietPlan.adherencePercent ?? null,
-    patientFullName: dietPlan.patientFullName,
-    nutritionistFullName: dietPlan.nutritionistFullName,
-    days: weekDays,
+    requestId: options.requestId ?? null,
+    generatedAt: (options.generatedAt ?? new Date()).toISOString(),
+    output: {
+      fileName: options.fileName ?? buildFileName(dietPlan),
+      delivery: options.delivery ?? 'download',
+      locale: options.locale ?? 'es-CO',
+      timezone: options.timezone ?? 'America/Bogota',
+      showGenerationDate: options.showGenerationDate ?? true,
+      showProfessionalSignature: options.showProfessionalSignature ?? true,
+      footerText: options.footerText ?? null,
+    },
+    patient: {
+      id: dietPlan.patientId,
+      fullName: dietPlan.patientFullName,
+    },
+    dietPlan: {
+      id: dietPlan.id,
+      name: dietPlan.name,
+      objective: dietPlan.objective,
+      phase: dietPlan.phase ?? null,
+      dailyCaloriesTarget: numberOrZero(dietPlan.estimatedCalories),
+    },
+    week: {
+      startDate: toIsoDate(dietPlan.startDate),
+      endDate: toIsoDate(dietPlan.endDate),
+      days: weekDays,
+    },
+    summary: {
+      weeklyTargetCalories,
+      weeklyConsumedCalories,
+    },
   };
 }
 
@@ -103,9 +126,10 @@ function mapDay(day: DietPlanDayModel): DietPdfDay {
 
   return {
     id: day.id,
-    dietPlanId: day.dietPlanId,
     dayLabel: day.dayLabel,
     dayOrder: day.dayOrder,
+    targetCalories: sumBy(meals, (meal) => meal.targetCalories),
+    consumedCalories: sumBy(meals, (meal) => meal.consumedCalories),
     meals,
   };
 }
@@ -117,24 +141,25 @@ function mapMeal(meal: DietMealModel): DietPdfMeal {
 
   return {
     id: meal.id,
-    dietPlanDayId: meal.dietPlanDayId,
     name: meal.name,
     mealOrder: meal.mealOrder,
+    time: meal.notes ?? null,
     targetCalories: numberOrZero(meal.targetCalories),
-    notes: meal.notes ?? null,
-    items,
+    consumedCalories: sumBy(items, (item) => item.calories),
+    text:
+      items.length > 0
+        ? items
+            .map((item) => `${item.name}${item.portion ? ` ${item.portion}` : ''}`)
+            .join(' + ')
+        : 'Sin alimentos registrados',
   };
 }
 
-function mapItem(item: DietMealItemModel): DietPdfMealItem {
+function mapItem(item: DietMealItemModel) {
   return {
-    id: item.id,
-    dietMealId: item.dietMealId,
     name: item.name,
     portion: item.portion ?? null,
     calories: numberOrZero(item.calories),
-    itemOrder: item.itemOrder,
-    notes: item.notes ?? null,
   };
 }
 

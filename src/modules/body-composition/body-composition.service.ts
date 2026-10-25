@@ -1,12 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuthenticatedUser } from '../auth/auth.types';
-import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBodyCompositionInput } from './dto/create-body-composition.input';
 import { UpdateBodyCompositionInput } from './dto/update-body-composition.input';
 
 @Injectable()
 export class BodyCompositionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
+  ) {}
 
   async findByPatient(currentUser: AuthenticatedUser, patientId: string) {
     await this.ensurePatientBelongsToTenant(currentUser.tenantId, patientId);

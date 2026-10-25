@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { NotificationType, Prisma } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/auth.types';
 
 interface CreateNotificationPayload {
@@ -16,7 +17,9 @@ interface CreateNotificationPayload {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
+  ) {}
 
   async myNotifications(currentUser: AuthenticatedUser, patientId: string) {
     return this.prisma.notification.findMany({

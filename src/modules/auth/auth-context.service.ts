@@ -8,7 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import { CONTEXT } from '@nestjs/graphql';
 import { JwtService } from '@nestjs/jwt';
 import { TenantStatus, UserStatus } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuthenticatedUser, AuthRequest, AuthTokenPayload } from './auth.types';
 
 const SYSTEM_TENANT_SLUG = 'vitalbite-system';
@@ -19,7 +20,7 @@ export class AuthContextService {
     @Inject(CONTEXT) private readonly context: { req?: AuthRequest },
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
   ) {}
 
   async getCurrentUser(): Promise<AuthenticatedUser> {

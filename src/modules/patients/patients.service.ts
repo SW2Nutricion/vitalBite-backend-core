@@ -1,18 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AuthenticatedUser } from '../auth/auth.types';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import {
   PatientStatus,
   Prisma,
   UserStatus,
 } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePatientInput } from './dto/create-patient.input';
 import { PatientFilterInput } from './dto/patient-filter.input';
 import { UpdatePatientInput } from './dto/update-patient.input';
 
 @Injectable()
 export class PatientsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
+  ) {}
 
   async findMany(currentUser: AuthenticatedUser, filter?: PatientFilterInput) {
     return this.prisma.patient.findMany({
@@ -25,6 +28,18 @@ export class PatientsService {
           lastName: 'asc',
         },
       ],
+      include: {
+        bodyMeasurements: {
+          where: { deletedAt: null },
+          orderBy: { measuredAt: 'desc' },
+          take: 20,
+        },
+        bodyCompositions: {
+          where: { deletedAt: null },
+          orderBy: { measuredAt: 'desc' },
+          take: 1,
+        },
+      },
     });
   }
 
@@ -33,6 +48,18 @@ export class PatientsService {
       where: {
         id,
         tenantId: currentUser.tenantId,
+      },
+      include: {
+        bodyMeasurements: {
+          where: { deletedAt: null },
+          orderBy: { measuredAt: 'desc' },
+          take: 20,
+        },
+        bodyCompositions: {
+          where: { deletedAt: null },
+          orderBy: { measuredAt: 'desc' },
+          take: 1,
+        },
       },
     });
 

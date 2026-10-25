@@ -26,15 +26,12 @@ Verificar:
 - Dominio del frontend Angular.
 - Configuración del ambiente.
 
-## Error comunicando microservicios
+## Error comunicando el API Gateway
 
 Verificar:
 
-- `PAYMENTS_SERVICE_URL`.
-- `DOCUMENTS_SERVICE_URL`.
-- `AI_SERVICE_URL`.
-- Disponibilidad de cada servicio.
-- Logs del Core.
+- URL y disponibilidad del API Gateway.
+- Logs del API Gateway y del Core.
 
 ## Error GraphQL
 
