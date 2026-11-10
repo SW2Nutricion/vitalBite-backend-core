@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -12,7 +13,8 @@ import {
   TenantStatus,
   UserStatus,
 } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { LoginInput } from './dto/login.input';
 import { RegisterInput } from './dto/register.input';
 import { JoinTenantInput } from './dto/join-tenant.input';
@@ -26,7 +28,7 @@ export class AuthService {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
   ) {}
 
   async login(input: LoginInput): Promise<AuthSessionModel> {

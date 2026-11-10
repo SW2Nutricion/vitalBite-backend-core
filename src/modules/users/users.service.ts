@@ -1,13 +1,15 @@
 import {
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { hash } from 'bcryptjs';
 import { Prisma, UserStatus } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuditService } from '../audit/audit.service';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { PaymentsIntegrationService } from '../payments/payments-integration.service';
@@ -22,7 +24,7 @@ type TenantUser = Prisma.UserGetPayload<object>;
 @Injectable()
 export class UsersService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
     private readonly paymentsIntegration: PaymentsIntegrationService,
     private readonly auditService: AuditService,
   ) {}

@@ -5,10 +5,12 @@ import { RequestPlanChangeInput } from './dto/request-plan-change.input';
 import { ResolvePlanChangeInput } from './dto/resolve-plan-change.input';
 import { CheckoutSessionStatusModel } from './models/checkout-session-status.model';
 import { InitialCheckoutSessionModel } from './models/initial-checkout-session.model';
+import { PaymentHistoryModel } from './models/payment-history.model';
 import { PlanChangeRequestModel } from './models/plan-change-request.model';
 import { PaymentResponseModel } from './models/payment-response.model';
 import { SubscriptionPlanModel } from './models/subscription-plan.model';
 import { TenantSubscriptionModel } from './models/tenant-subscription.model';
+import { SuperAdminRevenueMetricsModel } from './models/super-admin-revenue-metrics.model';
 import { PaymentsIntegrationService } from './payments-integration.service';
 
 @Resolver()
@@ -30,6 +32,12 @@ export class PaymentsResolver {
     return this.paymentsIntegration.findCurrentTenantSubscription(currentUser);
   }
 
+  @Query(() => SuperAdminRevenueMetricsModel)
+  async superAdminRevenueMetrics() {
+    const currentUser = await this.authContext.getCurrentUser();
+    return this.paymentsIntegration.getGlobalRevenueMetrics(currentUser);
+  }
+
   @Query(() => CheckoutSessionStatusModel)
   async checkoutSessionStatus(@Args('sessionId') sessionId: string) {
     const currentUser = await this.authContext.getCurrentUser();
@@ -37,6 +45,12 @@ export class PaymentsResolver {
       currentUser,
       sessionId,
     );
+  }
+
+  @Query(() => [PaymentHistoryModel])
+  async paymentHistory() {
+    const currentUser = await this.authContext.getCurrentUser();
+    return this.paymentsIntegration.findPaymentHistory(currentUser);
   }
 
   @Query(() => [PlanChangeRequestModel])
@@ -78,5 +92,11 @@ export class PaymentsResolver {
       currentUser,
       input,
     );
+  }
+
+  @Mutation(() => PaymentHistoryModel)
+  async retryInvoiceGeneration(@Args('recordId') recordId: string) {
+    const currentUser = await this.authContext.getCurrentUser();
+    return this.paymentsIntegration.retryInvoiceGeneration(currentUser, recordId);
   }
 }

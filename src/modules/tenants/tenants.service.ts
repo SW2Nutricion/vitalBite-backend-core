@@ -1,10 +1,12 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, TenantStatus } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuditService } from '../audit/audit.service';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { ResolvePlanChangeInput } from '../payments/dto/resolve-plan-change.input';
@@ -32,7 +34,7 @@ type TenantWithCounts = Prisma.TenantGetPayload<{
 @Injectable()
 export class TenantsService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
     private readonly paymentsIntegration: PaymentsIntegrationService,
     private readonly auditService: AuditService,
   ) {}

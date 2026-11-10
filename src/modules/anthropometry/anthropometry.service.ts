@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { AnthropometryMeasurementFilterInput } from './dto/anthropometry-measurement-filter.input';
 import { CreateAnthropometryMeasurementInput } from './dto/create-anthropometry-measurement.input';
@@ -11,7 +13,9 @@ import { UpdateAnthropometryMeasurementInput } from './dto/update-anthropometry-
 
 @Injectable()
 export class AnthropometryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
+  ) {}
 
   async findByPatient(
     currentUser: AuthenticatedUser,

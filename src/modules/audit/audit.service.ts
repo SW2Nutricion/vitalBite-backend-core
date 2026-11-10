@@ -1,11 +1,13 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { Prisma } from '../../prisma/generated-client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { DATABASE_PORT } from '../../core/application/ports/database.port';
+import type { DatabasePort } from '../../core/application/ports/database.port';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { AuditEventsFilterInput } from './dto/audit-events-filter.input';
 
@@ -27,7 +29,9 @@ export interface RecordAuditEventInput {
 
 @Injectable()
 export class AuditService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(DATABASE_PORT) private readonly prisma: DatabasePort,
+  ) {}
 
   async recordEvent(input: RecordAuditEventInput) {
     return this.prisma.$transaction(async (transaction) => {
